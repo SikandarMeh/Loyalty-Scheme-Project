@@ -1,0 +1,34 @@
+WITH table AS
+(SELECT t.date,
+EXTRACT(year FROM t.date) AS Year,
+t.transaction_id,
+t.item_id,
+t.item_price,
+t.item_quantity,
+IFNULL(p.return_quantity,0) AS num_returns,
+p.return_status,
+pc.cost_of_item,
+u.user_crm_id,
+u.prism_plus_tier
+FROM `Prism_Main.transactionsanditems` t
+LEFT JOIN `Prism_Main.transactions` tr
+ON t.transaction_id = tr.transaction_id
+LEFT JOIN `Prism_Main.product_returns` p
+ON t.transaction_id = p.transaction_id
+JOIN `Prism_Main.product_costs` pc
+ON t.item_id = pc.item_id
+JOIN `Prism_Main.users` u
+ON tr.user_crm_id = u.user_crm_id
+--comparing second half of both 2021 and 2022
+WHERE (t.date between '2021-06-30' AND '2021-12-31' OR t.date between '2022-06-30' AND '2022-12-31') AND (p.return_status != "Exchange" OR p.return_status IS NULL)
+
+)
+SELECT 
+Year,
+prism_plus_tier,
+SUM(item_price*(item_quantity-num_returns) - cost_of_item*(item_quantity-num_returns))/COUNT(DISTINCT transaction_id) AS avg_profit_per_order,
+COUNT(DISTINCT transaction_id) AS total_orders,
+SUM(item_price*(item_quantity-num_returns) - cost_of_item*(item_quantity-num_returns)) AS total_earnings
+FROM table
+GROUP BY 1,2
+ORDER BY 1,3 DESC
