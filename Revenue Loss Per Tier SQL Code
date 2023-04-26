@@ -1,0 +1,34 @@
+With net_transactions as (
+SELECT transaction_id, u.user_crm_id, u.prism_plus_tier, transaction_revenue
+FROM Prism_Main.users u
+JOIN Prism_Main.transactions t ON t.user_crm_id = u.user_crm_id
+),
+
+Gross as (
+SELECT ti.transaction_id, SUM(item_quantity * item_list_price) AS gross_revenue
+FROM Prism_Main.transactionsanditems ti
+JOIN Prism_Main.product_costs c
+ON ti.item_id = c.item_id
+JOIN Prism_Main.product_listprices lp
+ON lp.item_id = ti.item_id
+GROUP BY transaction_id
+)
+
+SELECT prism_plus_tier, net_revenue_per_customer, gross_rev_per_customer,
+gross_rev_per_customer - net_revenue_per_customer AS loss_from_discounts_per_customer,
+(loss_from_discounts_per_customer/ gross_rev_per_customer) * 100 AS percent_of_gross
+FROM (
+SELECT prism_plus_tier, net_revenue_per_customer, gross_rev_per_customer,
+gross_rev_per_customer - net_revenue_per_customer AS loss_from_discounts_per_customer
+FROM (
+SELECT prism_plus_tier,
+all_transactions/no_customers AS net_revenue_per_customer, all_prices/no_customers AS gross_rev_per_customer
+FROM (
+SELECT prism_plus_tier, COUNT(user_crm_id) AS no_customers, SUM(transaction_revenue) AS all_transactions, SUM(gross_revenue) AS all_prices
+FROM (
+SELECT user_crm_id, prism_plus_tier, transaction_revenue, gross_revenue
+FROM net_transactions
+JOIN Gross
+ON net_transactions.transaction_id = Gross.transaction_id)
+GROUP BY prism_plus_tier)
+)))
