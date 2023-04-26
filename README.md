@@ -16,8 +16,8 @@ Which segment would you target?
 How would you develop the business case doc?
 Wireframe your approach before you build anything!
 .
-Analysis
 
+Analysis
 The concept of Prism+ could in theory incorporate all of the analyses already completed across all functional areas to answer:
 who is the audience? (customer segmentation and classification)
 how engaged are they? (email, social, other marketing)
